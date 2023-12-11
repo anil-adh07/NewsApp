@@ -16,17 +16,7 @@ export default class News extends Component {
         pageSize: PropTypes.number.isRequired,
         category: PropTypes.string.isRequired
     }
-    constructor(props){
-        super(props);
-        console.log("this is constructor");
-        this.state= {
-            articles: [],
-            loading: false,
-            page : 1,
-            totalResults: 0,
-        };
-        document.title = `${this.capitalizeFirstLetter(this.props.category)} | NewsApp`;
-    };
+    
 
     capitalizeFirstLetter = (string) => {
        return string[0].toUpperCase() + string.substring(1);
@@ -35,12 +25,39 @@ export default class News extends Component {
     apiKey ='2c3693d7dffd425d903c3530f174eed4';
     //apiKey ='81091146852b4f5a80d1a6249a7bdd41'; //aa
 
+    
+    fetchMoreData= async()=>{
+        this.setState({
+            page: this.state.page +1,
+        })
+        let url = `https://newsapi.org/v2/top-headlines?country=${this.props.country}&category=${this.props.category}&apiKey=${this.apiKey}&page=${this.state.page}&pageSize=${this.props.pageSize}`;
+        let data = await fetch(url);
+        let parsedData= await data.json();
+        console.log(parsedData);
+        this.setState({
+            articles: this.state.articles.concat(parsedData.articles),
+            totalResults: parsedData.totalResults,
+        });
+
+    };
+    constructor(props){
+        super(props);
+        console.log("this is constructor");
+        this.state= {
+            articles: [],
+            loading: false,
+            totalResults: 0,
+            page : 1
+        };
+        document.title = `${this.capitalizeFirstLetter(this.props.category)} | NewsApp`;
+    };
     async updateNews(){
-        this.props.setProgress(10);
+        this.props.setProgress(10);        
         let url = `https://newsapi.org/v2/top-headlines?country=${this.props.country}&category=${this.props.category}&apiKey=${this.apiKey}&page=${this.state.page}&pageSize=${this.props.pageSize}`;
         this.setState({
             loading: true,
-        })
+        });
+        console.log("Async func = " + this.state.page);
         let data = await fetch(url);
         this.props.setProgress(30);
         let parsedData= await data.json();
@@ -53,23 +70,12 @@ export default class News extends Component {
         });
         this.props.setProgress(100);
     }
-
-    fetchMoreData = async()=>{
-        this.setState({page: this.state.page+1});
-        console.log(this.state.page)
-        let url = `https://newsapi.org/v2/top-headlines?country=${this.props.country}&category=${this.props.category}&apiKey=${this.apiKey}&page=${this.state.page}&pageSize=${this.props.pageSize}`;
-        let data = await fetch(url);
-        let parsedData= await data.json();
-        console.log(parsedData);
-        this.setState({
-            articles: this.state.articles.concat(parsedData.articles),
-            totalResults: parsedData.totalResults,
-        });
-
-    };
-
+    
     componentDidMount(){
         this.updateNews();
+        this.setState({
+            page: this.state.page +1,
+        })
     } 
 
     // handlePrev = async() =>{
@@ -110,6 +116,7 @@ export default class News extends Component {
     //     })
     //     this.updateNews();       
     // } 
+
   render() {
     return (
     <>
@@ -124,9 +131,9 @@ export default class News extends Component {
         >                                                                            
         {this.state.loading && <Spinner/>}<div className='container my-3'>
         <div className='row'>  
-        {this.state.articles.map((element)=>{
+        {this.state.articles.map((element, index)=>{
             return(
-                <div className='col md-4  my-3' key={element.url}>
+                <div className='col md-4  my-3' key={index}>
                     <NewsItem title={element.title?element.title.slice(0,45):"..................."} 
                     description ={element.description?element.description.slice(0,90):".............."} 
                     imgUrl={element.urlToImage?element.urlToImage:"https://content.api.news/v3/images/bin/f7f325e09ce6fec78b855f77945ee673"} 
